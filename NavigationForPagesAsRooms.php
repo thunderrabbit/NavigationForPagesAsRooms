@@ -1,18 +1,24 @@
 <?php
-$wgExtensionFunctions[] = 'efNavigationForPagesAsRooms';
- 
-function efNavigationForPagesAsRooms() {
+
+
+class NavigationForPagesAsRooms {
+
+protected $castle_navigation;
+
+function register() {
     global $wgParser;
+    $this->setup_nav();
     $wgParser->setHook( 'navigation', 'efRenderNavigationLine' );
 }
 
-$castle_navigation = array(
+function setup_nav() {
+$this->castle_navigation = array(
 "ancient looking scrolls" => "step back into [[The Castle Entrance]].",
 "armourer's tower" => "go back into the [[inner ward]], or go up to the [[atilliator's workshop]].",
 "around thunder rabbit's carrot" => "go inside [[Thunder Rabbit's Carrot]] (where you can relax without sinking into the cloud), go back to [[the royal garden]], or get lost in [[the Alien Forest]].",
 "astronomical tower" => "go up to the [[candle makers' shop]], or back into the [[inner ward]].",
 "astronomical tower:observatory" => "go down to the [[candle makers' shop]], or west to [[Soness Soleil Solarium]].",
-"atilliator's workshop" => "go down to the [[armourer's tower]], south to [[the barracks]], or west to [[the parlour]].",
+"Atilliator's workshop" => "go down to the [[armourer's tower]], south to [[the barracks]], or west to [[the parlour]].",
 "bake house" => "go back into the [[inner ward]], or pass through to the [[granary]].",
 "balcony overlooking the pool" => "jump into [[the swimming pool]], or go back inside the [[east upper hall]].",
 "balcony overlooking the roller coaster" => "go back into the [[south upper corridor]], or down the ladder to [[The Roller Coaster area]].",
@@ -113,10 +119,10 @@ $castle_navigation = array(
 
 );
 
-$_navigation_array_array = $castle_navigation;
- 
+}
+
 function efRenderNavigationLine( $input, $args, $parser ) {
-	global $_navigation_array_array;
+	$_navigation_array_array = $this->castle_navigation;
 	$roomTitle = $parser->mTitle->mTextform;
 
 	$prefix = "You can ";
@@ -155,4 +161,5 @@ function efRenderNavigationLine( $input, $args, $parser ) {
 
 	return $prefix . $exit_directions . $postfix;
 }
-?>
+}
+
