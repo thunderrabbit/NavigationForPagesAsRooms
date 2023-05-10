@@ -1,0 +1,13 @@
+{
+    "name": "Navigation for CoD",
+    "author": "Rob Nugen",
+    "url": "https://www.thunderrabbit.com/wiki/Extension:MyExtension",
+    "description": "A simple extension for MediaWiki 1.27",
+    "version": "1.0",
+    "license-name": "GPL-2.0-or-later",
+    "type": "validextensionclass",
+    "manifest_version": 1,
+    "AutoloadClasses": {
+	"Navigation": "Navigation.php"
+    }
+}
