@@ -1,13 +1,19 @@
 {
-    "name": "Navigation for CoD",
-    "author": "Rob Nugen",
-    "url": "https://www.thunderrabbit.com/wiki/Extension:MyExtension",
-    "description": "A simple extension for MediaWiki 1.27",
-    "version": "1.0",
-    "license-name": "GPL-2.0-or-later",
-    "type": "validextensionclass",
-    "manifest_version": 1,
-    "AutoloadClasses": {
-	"Navigation": "Navigation.php"
-    }
+	"name": "NavigationForPagesAsRooms",
+	"author": "Rob Nugen",
+	"url": "https://github.com/thunderrabbit/NavigationForPagesAsRooms",
+	"description": "Renders <navigation/> tags as room-specific exit links for the Castle of Dreams wiki.",
+	"version": "2.0.0",
+	"license-name": "GPL-3.0-or-later",
+	"type": "parserhook",
+	"requires": {
+		"MediaWiki": ">= 1.39.0"
+	},
+	"manifest_version": 2,
+	"AutoloadClasses": {
+		"NavigationForPagesAsRooms": "NavigationForPagesAsRooms.php"
+	},
+	"Hooks": {
+		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit"
+	}
 }

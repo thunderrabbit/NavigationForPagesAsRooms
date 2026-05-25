@@ -1,18 +1,22 @@
 <?php
-
+/**
+ * NavigationForPagesAsRooms - Castle of Dreams navigation extension.
+ *
+ * Renders <navigation/> tags as room-specific exit links. On any page with a
+ * <navigation/> tag in its wikitext, the rendered output describes the exits
+ * out of that room ("go east to the parlour, or west to the music room").
+ *
+ * Original room data ~2009; manifest_v2 modernization 2026 for MediaWiki 1.39+.
+ */
 
 class NavigationForPagesAsRooms {
 
-protected $castle_navigation;
+	public static function onParserFirstCallInit( Parser $parser ) {
+		$parser->setHook( 'navigation', [ self::class, 'renderNavigationLine' ] );
+	}
 
-function register() {
-    global $wgParser;
-    $this->setup_nav();
-    $wgParser->setHook( 'navigation', 'efRenderNavigationLine' );
-}
-
-function setup_nav() {
-$this->castle_navigation = array(
+	private static function getNavigationMap(): array {
+		return [
 "ancient looking scrolls" => "step back into [[The Castle Entrance]].",
 "armourer's tower" => "go back into the [[inner ward]], or go up to the [[atilliator's workshop]].",
 "around thunder rabbit's carrot" => "go inside [[Thunder Rabbit's Carrot]] (where you can relax without sinking into the cloud), go back to [[the royal garden]], or get lost in [[the Alien Forest]].",
@@ -117,49 +121,42 @@ $this->castle_navigation = array(
 "thunder rabbit" => "With the Magic of The Wiki, you can teleport to [[Thunder Rabbit's Carrot]]",
 
 
-);
-
-}
-
-function efRenderNavigationLine( $input, $args, $parser ) {
-	$_navigation_array_array = $this->castle_navigation;
-	$roomTitle = $parser->mTitle->mTextform;
-
-	$prefix = "You can ";
-	$postfix = ""; //  (while laying out the pages, remember to add &lt;navigation/&gt;)";
-
-	if(!array_key_exists(strtolower($roomTitle), $_navigation_array_array))
-	{
-		switch($parser->mTitle->getNamespace())
-		{
-			case 100:    // namespace = scroll
-				$where_we_can_go = "look for another [[ancient looking scrolls|another scroll]], or step back into [[The Castle Entrance]].";
-				break;
-
-			default:
-				$where_we_can_go = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
-				$prefix = "";   // You can see why we don't need "You can " at the beginning of the sentence
-				break;
-		}
-	}
-	else
-	{
-		switch($parser->mTitle->getNamespace())
-		{
-			case 106:    // namespace = library
-				$prefix = "<hr/><br/>";   // horizontal line and newline
-			break;
-			case 104:   // castlepedia (for biographies in castlepedia, we will allow them to teleport to their rooms ("With The Magick of Wiki")
-				$prefix = "";   // no prefix, please
-			break;
-			default:
-		}
-		$where_we_can_go = $_navigation_array_array[strtolower($roomTitle)];
+		];
 	}
 
-	$exit_directions = $parser->recursiveTagParse($where_we_can_go);
+	public static function renderNavigationLine( $input, array $args, Parser $parser, PPFrame $frame ) {
+		$title = $parser->getTitle();
+		$roomTitle = $title->getText();
+		$namespace = $title->getNamespace();
 
-	return $prefix . $exit_directions . $postfix;
-}
-}
+		$castle = self::getNavigationMap();
+		$key = strtolower( $roomTitle );
 
+		$prefix = 'You can ';
+		$postfix = '';
+
+		if ( !array_key_exists( $key, $castle ) ) {
+			switch ( $namespace ) {
+				case 100:  // namespace = scroll
+					$where = "look for another [[ancient looking scrolls|another scroll]], or step back into [[The Castle Entrance]].";
+					break;
+				default:
+					$where = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
+					$prefix = '';
+					break;
+			}
+		} else {
+			switch ( $namespace ) {
+				case 106:  // namespace = library
+					$prefix = '<hr/><br/>';
+					break;
+				case 104:  // castlepedia
+					$prefix = '';
+					break;
+			}
+			$where = $castle[$key];
+		}
+
+		return $prefix . $parser->recursiveTagParse( $where ) . $postfix;
+	}
+}
