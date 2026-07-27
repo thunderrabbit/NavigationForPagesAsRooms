@@ -16,6 +16,18 @@
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\NavigationForPagesAsRooms\\": "includes/"
 	},
+	"SpecialPages": {
+		"CastleNavigation": "MediaWiki\\Extension\\NavigationForPagesAsRooms\\SpecialCastleNavigation"
+	},
+	"MessagesDirs": {
+		"NavigationForPagesAsRooms": [
+			"i18n"
+		]
+	},
+	"ExtensionMessagesFiles": {
+		"NavigationForPagesAsRoomsAlias": "NavigationForPagesAsRooms.alias.php"
+	},
+	"descriptionmsg": "castlenavigation-desc",
 	"Hooks": {
 		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit"
 	}
