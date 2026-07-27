@@ -6,7 +6,7 @@
 	},
 	"castlenavigation": "Name of the special page listing every Castle room and its exits.",
 	"castlenavigation-desc": "{{desc|name=NavigationForPagesAsRooms}}",
-	"castlenavigation-summary": "Totals above the room table. $1 is the number of rooms in the navigation map, $2 the number of rooms with at least one destination that does not exist, $3 the total number of such destinations.",
+	"castlenavigation-summary": "Totals above the room table. $1 rooms in the navigation map, $2 rooms having at least one destination that does not exist, $3 such destinations in total, $4 rooms with no wiki page of their own.",
 	"castlenavigation-col-room": "Table column heading: the room's key in the navigation map.",
 	"castlenavigation-col-page": "Table column heading: whether a wiki page with the room's title exists.",
 	"castlenavigation-col-exits": "Table column heading: how many destinations the room links to.",

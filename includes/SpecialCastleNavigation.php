@@ -11,6 +11,7 @@ namespace MediaWiki\Extension\NavigationForPagesAsRooms;
 
 use MediaWiki\Category\Category;
 use MediaWiki\Html\Html;
+use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
@@ -43,6 +44,47 @@ class SpecialCastleNavigation extends SpecialPage {
 		} else {
 			$this->showIndex( $rooms );
 		}
+	}
+
+	/**
+	 * Every content page, keyed the way the renderer keys rooms.
+	 *
+	 * A room key is `strtolower( $title->getText() )` — lowercased AND namespace-stripped,
+	 * so it cannot be turned back into a Title: "on the nature of the cloud" would resolve
+	 * to mainspace "On the nature of the cloud" when the real page is
+	 * "Library:On the nature of The Cloud". Going the other way is exact — fold every real
+	 * page the same way the renderer does, and look the key up in that.
+	 *
+	 * One query over a few hundred rows.
+	 *
+	 * @return array<string,Title> folded key => the real Title
+	 */
+	private function roomPageIndex(): array {
+		$namespaces = array_values( array_unique( array_merge(
+			[ NS_MAIN ],
+			$this->getConfig()->get( MainConfigNames::ContentNamespaces )
+		) ) );
+
+		$res = MediaWikiServices::getInstance()
+			->getConnectionProvider()
+			->getReplicaDatabase()
+			->newSelectQueryBuilder()
+			->select( [ 'page_namespace', 'page_title' ] )
+			->from( 'page' )
+			->where( [ 'page_namespace' => $namespaces ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
+
+		$index = [];
+		foreach ( $res as $row ) {
+			$title = Title::makeTitle( (int)$row->page_namespace, $row->page_title );
+			$key = strtolower( $title->getText() );
+			// Two pages in different namespaces can fold to the same key. The renderer has
+			// the same ambiguity and resolves by whichever page is being viewed, so there
+			// is no "right" winner here; keep the first and don't pretend otherwise.
+			$index[$key] ??= $title;
+		}
+		return $index;
 	}
 
 	/**
@@ -84,14 +126,15 @@ class SpecialCastleNavigation extends SpecialPage {
 	private function showIndex( array $rooms ): void {
 		$out = $this->getOutput();
 
-		// Gather every title the index will ask about — rooms and destinations alike —
-		// so the whole page costs one existence query.
+		// Destinations are written as real wikilink targets, so Title::newFromText is
+		// correct for them — unlike room keys, which need roomPageIndex(). Collect them
+		// all first so every destination on the page costs one existence query.
+		$pageIndex = $this->roomPageIndex();
 		$wanted = [];
 		$parsedRooms = [];
 		foreach ( $rooms as $key => $wikitext ) {
 			$targets = NavigationSlots::targets( $wikitext );
 			$parsedRooms[$key] = $targets;
-			$wanted[] = $key;
 			foreach ( $targets as $target ) {
 				$wanted[] = $target;
 			}
@@ -99,26 +142,32 @@ class SpecialCastleNavigation extends SpecialPage {
 		$exists = $this->resolveExistence( $wanted );
 
 		$rows = [];
-		$brokenRooms = 0;
+		$roomsWithBrokenTargets = 0;
 		$brokenTargets = 0;
+		$roomsWithNoPage = 0;
 		foreach ( $parsedRooms as $key => $targets ) {
 			$missing = array_values( array_filter(
 				$targets,
 				static fn ( string $t ) => empty( $exists[$t] )
 			) );
 			if ( $missing ) {
-				$brokenRooms++;
+				$roomsWithBrokenTargets++;
 				$brokenTargets += count( $missing );
+			}
+			$page = $pageIndex[$key] ?? null;
+			if ( !$page ) {
+				$roomsWithNoPage++;
 			}
 			$rows[] = [
 				'key' => $key,
-				'pageExists' => !empty( $exists[$key] ),
+				'page' => $page,
 				'exits' => count( $targets ),
 				'missing' => $missing,
 			];
 		}
 
-		$out->addHTML( $this->summaryHtml( count( $rows ), $brokenRooms, $brokenTargets ) );
+		$out->addHTML( $this->summaryHtml(
+			count( $rows ), $roomsWithBrokenTargets, $brokenTargets, $roomsWithNoPage ) );
 		$out->addHTML( $this->indexTableHtml( $rows ) );
 		$out->addHTML( $this->noEntryHtml() );
 	}
@@ -157,15 +206,17 @@ class SpecialCastleNavigation extends SpecialPage {
 		return $html . Html::rawElement( 'ul', [], implode( '', $items ) );
 	}
 
-	private function summaryHtml( int $roomCount, int $brokenRooms, int $brokenTargets ): string {
+	private function summaryHtml(
+		int $roomCount, int $roomsWithBrokenTargets, int $brokenTargets, int $roomsWithNoPage
+	): string {
 		$msg = $this->msg( 'castlenavigation-summary' )
-			->numParams( $roomCount, $brokenRooms, $brokenTargets )
+			->numParams( $roomCount, $roomsWithBrokenTargets, $brokenTargets, $roomsWithNoPage )
 			->escaped();
 		return Html::rawElement( 'p', [ 'class' => 'nfpar-summary' ], $msg );
 	}
 
 	/**
-	 * @param array<int,array{key:string,pageExists:bool,exits:int,missing:string[]}> $rows
+	 * @param array<int,array{key:string,page:?Title,exits:int,missing:string[]}> $rows
 	 */
 	private function indexTableHtml( array $rows ): string {
 		$html = Html::openElement( 'table', [
@@ -188,32 +239,39 @@ class SpecialCastleNavigation extends SpecialPage {
 	}
 
 	/**
-	 * @param array{key:string,pageExists:bool,exits:int,missing:string[]} $row
+	 * @param array{key:string,page:?Title,exits:int,missing:string[]} $row
 	 */
 	private function indexRowHtml( array $row ): string {
-		$isBroken = $row['missing'] || !$row['pageExists'];
+		$page = $row['page'];
 
-		if ( !$row['pageExists'] ) {
-			$status = $this->msg( 'castlenavigation-status-nopage' )->text();
-		} elseif ( $row['missing'] ) {
+		if ( $row['missing'] ) {
 			$status = $this->msg( 'castlenavigation-status-brokentargets' )
 				->params( $this->getLanguage()->commaList( $row['missing'] ) )
 				->text();
+		} elseif ( !$page ) {
+			$status = $this->msg( 'castlenavigation-status-nopage' )->text();
 		} else {
 			$status = $this->msg( 'castlenavigation-status-ok' )->text();
 		}
 
+		// Only a broken destination is a defect. A room with no page of its own is
+		// ordinary — plenty of NFPaR entries describe places that were never written up —
+		// so it gets reported without being flagged red.
 		$detail = $this->getPageTitle( $row['key'] );
+		$linkRenderer = $this->getLinkRenderer();
 
 		$cells = Html::rawElement( 'td', [],
-			$this->getLinkRenderer()->makeLink( $detail, $row['key'] ) );
-		$cells .= Html::element( 'td', [], $row['pageExists'] ? '✓' : '✗' );
+			$linkRenderer->makeLink( $detail, $row['key'] ) );
+		$cells .= Html::rawElement( 'td', [],
+			$page
+				? $linkRenderer->makeLink( $page, $page->getPrefixedText() )
+				: Html::element( 'span', [ 'class' => 'nfpar-nopage' ], '—' ) );
 		$cells .= Html::element( 'td', [], (string)$row['exits'] );
 		$cells .= Html::element( 'td', [], (string)count( $row['missing'] ) );
 		$cells .= Html::element( 'td', [], $status );
 
 		return Html::rawElement( 'tr',
-			$isBroken ? [ 'class' => 'nfpar-broken' ] : [],
+			$row['missing'] ? [ 'class' => 'nfpar-broken' ] : [],
 			$cells );
 	}
 
