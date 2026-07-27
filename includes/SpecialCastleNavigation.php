@@ -16,7 +16,7 @@ use MediaWiki\MediaWikiServices;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 use MediaWiki\Widget\TitleInputWidget;
-use NavigationForPagesAsRooms;
+
 
 class SpecialCastleNavigation extends SpecialPage {
 
@@ -36,7 +36,7 @@ class SpecialCastleNavigation extends SpecialPage {
 		$this->setHeaders();
 		$this->outputHeader();
 
-		$rooms = NavigationForPagesAsRooms::getRooms();
+		$rooms = NavigationStore::getRooms();
 		$subPage = $subPage !== null ? trim( $subPage ) : '';
 
 		if ( $subPage !== '' ) {

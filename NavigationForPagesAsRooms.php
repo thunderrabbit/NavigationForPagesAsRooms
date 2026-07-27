@@ -162,7 +162,12 @@ class NavigationForPagesAsRooms {
 		$roomTitle = $title->getText();
 		$namespace = $title->getNamespace();
 
-		$castle = self::getRooms();
+		// Exits come from MediaWiki:Castle-navigation.json when it exists, falling back to
+		// getNavigationMap() below. Registering the dependency makes an edit to that page
+		// invalidate every room automatically — which is why the deploy-time cache dance
+		// described above is only needed while the data still lives in this file.
+		\MediaWiki\Extension\NavigationForPagesAsRooms\NavigationStore::registerDependency( $parser );
+		$castle = \MediaWiki\Extension\NavigationForPagesAsRooms\NavigationStore::getRooms();
 		$key = strtolower( $roomTitle );
 
 		$prefix = 'You can ';
