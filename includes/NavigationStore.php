@@ -20,12 +20,15 @@
 
 namespace MediaWiki\Extension\NavigationForPagesAsRooms;
 
+use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\JsonContent;
 use MediaWiki\MediaWikiServices;
+use MediaWiki\Permissions\Authority;
 use MediaWiki\Parser\Parser;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
 use NavigationForPagesAsRooms;
+use MediaWiki\Status\Status;
 
 class NavigationStore {
 
@@ -126,6 +129,60 @@ class NavigationStore {
 			$title->getArticleID(),
 			$revision ? $revision->getId() : 0
 		);
+	}
+
+	/**
+	 * Write one room's exits back to the data page.
+	 *
+	 * Reads the whole map first and replaces a single key, so a save can never drop the
+	 * other 110 rooms — and so two people editing different rooms don't clobber each other
+	 * beyond the usual last-write-wins on the page itself.
+	 *
+	 * @param string $key Lowercased room key; must already exist.
+	 * @param string $wikitext The room's new exit text.
+	 * @param Authority $performer Who is making the edit.
+	 * @return Status
+	 */
+	public static function saveRoom( string $key, string $wikitext, Authority $performer ): Status {
+		$title = self::getDataTitle();
+		if ( !$title ) {
+			return Status::newFatal( 'castlenavigation-save-badpage', self::DATA_PAGE );
+		}
+
+		$rooms = self::readDataPage() ?: NavigationForPagesAsRooms::getRooms();
+		if ( !array_key_exists( $key, $rooms ) ) {
+			return Status::newFatal( 'castlenavigation-noroom', $key );
+		}
+
+		if ( $rooms[$key] === $wikitext ) {
+			// Nothing to do. Saving anyway would put a null edit in the page history and
+			// invalidate every room's cache for no reason.
+			return Status::newGood( false );
+		}
+
+		$rooms[$key] = $wikitext;
+		ksort( $rooms );
+
+		$json = json_encode( $rooms,
+			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		if ( $json === false ) {
+			return Status::newFatal( 'castlenavigation-save-badjson' );
+		}
+
+		$services = MediaWikiServices::getInstance();
+		$updater = $services->getWikiPageFactory()
+			->newFromTitle( $title )
+			->newPageUpdater( $performer->getUser() );
+		$updater->setContent( SlotRecord::MAIN, new JsonContent( $json ) );
+		$updater->saveRevision( CommentStoreComment::newUnsavedComment(
+			'Castle navigation: ' . $key
+		) );
+
+		$status = $updater->getStatus() ?? Status::newGood();
+		if ( $status->isOK() ) {
+			self::clearCache();
+		}
+		return $status;
 	}
 
 	/** Drop the process cache. Only useful right after a save within the same request. */

@@ -27,5 +27,18 @@
 	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",
 	"nfpar-tracking-category-no-entry": "{{tracking category name}} Category collecting pages that render a navigation tag with no matching entry in the navigation map.",
 	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category.",
-	"castlenavigation-badtitle": "Shown when a destination cannot be parsed as a page title at all, so there is nothing to link to. $1 is the raw target as written in the navigation map."
+	"castlenavigation-badtitle": "Shown when a destination cannot be parsed as a page title at all, so there is nothing to link to. $1 is the raw target as written in the navigation map.",
+	"castlenavigation-field-prose": "Label for the textarea holding the room’s exit sentence.",
+	"castlenavigation-field-prose-help": "Help text under the prose field, explaining the numbered placeholders.",
+	"castlenavigation-field-target": "Label for a destination field. $1 is the slot number matching the placeholder in the prose.",
+	"castlenavigation-field-label": "Label for the optional display-text field of a destination. $1 is the slot number.",
+	"castlenavigation-field-allowmissing": "Checkbox letting the editor save a destination that is not an existing page, e.g. a page they intend to write.",
+	"castlenavigation-save": "{{Identical|Save}} Submit button for the room editing form.",
+	"castlenavigation-saved": "Shown after a successful save.",
+	"castlenavigation-error-emptytarget": "Error when a destination field was left blank. $1 is the slot number.",
+	"castlenavigation-error-unknownslot": "Error when the prose references a placeholder with no matching destination. $1 is a comma-separated list like \"{5}\".",
+	"castlenavigation-error-orphanslot": "Error when a destination exists but the prose never places it. $1 is a comma-separated list like \"{3}\".",
+	"castlenavigation-error-missingtargets": "Warning when destinations do not exist as pages. $1 is a comma-separated list of page titles. Not fatal — the editor may confirm and save.",
+	"castlenavigation-save-badpage": "Error when the configured data page title cannot be parsed. $1 is that title.",
+	"castlenavigation-save-badjson": "Error when the navigation data could not be encoded as JSON."
 }

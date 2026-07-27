@@ -27,5 +27,18 @@
 	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
 	"nfpar-tracking-category-no-entry": "Rooms with no navigation entry",
 	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go.",
-	"castlenavigation-badtitle": "Not a usable page title: $1"
+	"castlenavigation-badtitle": "Not a usable page title: $1",
+	"castlenavigation-field-prose": "Prose",
+	"castlenavigation-field-prose-help": "The sentence readers see. Write it however you like; use {1}, {2} … where a destination should appear.",
+	"castlenavigation-field-target": "Destination {$1}",
+	"castlenavigation-field-label": "Shown as {$1} (optional)",
+	"castlenavigation-field-allowmissing": "Save even if a destination doesn't exist yet",
+	"castlenavigation-save": "Save navigation",
+	"castlenavigation-saved": "Saved.",
+	"castlenavigation-error-emptytarget": "Destination {$1} is empty.",
+	"castlenavigation-error-unknownslot": "The prose mentions $1, but there is no such destination.",
+	"castlenavigation-error-orphanslot": "The prose never mentions $1, so that destination would be lost. Add it to the prose or clear the field.",
+	"castlenavigation-error-missingtargets": "These pages don't exist yet: $1. Check the spelling, or tick the box below to save anyway.",
+	"castlenavigation-save-badpage": "Cannot use $1 as the navigation data page.",
+	"castlenavigation-save-badjson": "Could not encode the navigation data as JSON."
 }

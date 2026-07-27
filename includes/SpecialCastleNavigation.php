@@ -1,15 +1,20 @@
 <?php
 /**
- * Special:CastleNavigation — see every room's exits, and which ones are broken.
+ * Special:CastleNavigation — see every room's exits, fix the broken ones, and edit them.
  *
- * Read-only for now (Stage 1). The point of this stage is to get the layout in front of
- * a human before committing to a storage backend, so nothing here writes: the views render
- * from the same map the renderer uses, and the editing controls are shown disabled.
+ * The index is readable by anyone: it is diagnostics over already-public content, and a
+ * broken destination is more useful to a passing reader as a red link than as a secret.
+ * Editing a room needs 'editinterface', the same right that guards the data page itself.
+ *
+ * Exits are stored as prose with {1}..{n} placeholders plus one destination per slot, so
+ * the room keeps its voice while destinations become autocompleted, checked fields —
+ * nobody has to retype "Watanabe Tower:2F guard quarters" inside brackets again.
  */
 
 namespace MediaWiki\Extension\NavigationForPagesAsRooms;
 
 use MediaWiki\Category\Category;
+use MediaWiki\HTMLForm\HTMLForm;
 use MediaWiki\Html\Html;
 use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
@@ -19,6 +24,12 @@ use MediaWiki\Widget\TitleInputWidget;
 
 
 class SpecialCastleNavigation extends SpecialPage {
+
+	/** @var string Room being edited; set before the form's submit callback runs. */
+	private $editingKey = '';
+
+	/** @var int How many slots that room has, so the callback knows what to read back. */
+	private $editingSlotCount = 0;
 
 	public function __construct() {
 		// Read-only diagnostics over already-public content, so no restriction yet.
@@ -331,7 +342,146 @@ class SpecialCastleNavigation extends SpecialPage {
 			return;
 		}
 
-		$out->addHTML( $this->roomDetailHtml( $key, $rooms[$key] ) );
+		// Sysops get the editing form; everyone else the read-only view. Gating here rather
+		// than on the whole special page keeps the audit useful to anyone who wants to look.
+		if ( $this->getAuthority()->isAllowed( 'editinterface' ) ) {
+			$this->showRoomForm( $key, $rooms[$key] );
+		} else {
+			$out->addHTML( $this->roomDetailHtml( $key, $rooms[$key] ) );
+		}
+	}
+
+	/**
+	 * The editing form for one room.
+	 *
+	 * Prose keeps the room's voice, with {1}..{n} standing in for destinations; each
+	 * destination is an autocompleting title field. The destination fields deliberately do
+	 * NOT use 'exists' => true, which would refuse the save outright: a red link to a page
+	 * you intend to write is legitimate, so a missing destination warns and asks for one
+	 * confirmation instead of being forbidden.
+	 */
+	private function showRoomForm( string $key, string $wikitext ): void {
+		$parsed = NavigationSlots::parse( $wikitext );
+		$this->editingKey = $key;
+		$this->editingSlotCount = count( $parsed['slots'] );
+
+		$fields = [
+			'prose' => [
+				'type' => 'textarea',
+				'label-message' => 'castlenavigation-field-prose',
+				'help-message' => 'castlenavigation-field-prose-help',
+				'default' => $parsed['prose'],
+				'rows' => 4,
+				'required' => true,
+			],
+		];
+
+		foreach ( $parsed['slots'] as $n => $slot ) {
+			$fields["target-$n"] = [
+				'type' => 'title',
+				// Autocompletes against real pages, but does not block a red link.
+				'exists' => false,
+				'required' => true,
+				'label' => $this->msg( 'castlenavigation-field-target' )->numParams( $n )->text(),
+				'default' => $slot['target'],
+			];
+			$fields["label-$n"] = [
+				'type' => 'text',
+				'label' => $this->msg( 'castlenavigation-field-label' )->numParams( $n )->text(),
+				'default' => $slot['label'] ?? '',
+			];
+		}
+
+		$fields['allowmissing'] = [
+			'type' => 'check',
+			'label-message' => 'castlenavigation-field-allowmissing',
+			'default' => false,
+		];
+
+		$form = HTMLForm::factory( 'ooui', $fields, $this->getContext() );
+		$form->setWrapperLegend( $key );
+		$form->setSubmitTextMsg( 'castlenavigation-save' );
+		$form->setSubmitCallback( [ $this, 'onRoomSubmit' ] );
+		$form->show();
+
+		$this->getOutput()->addHTML( Html::rawElement( 'p', [],
+			$this->getLinkRenderer()->makeLink(
+				$this->getPageTitle(),
+				$this->msg( 'castlenavigation-backtoindex' )->text() ) ) );
+	}
+
+	/**
+	 * Validate and save one room. Returns true, or a message for HTMLForm to display.
+	 *
+	 * @param array $data
+	 * @return bool|string|array
+	 */
+	public function onRoomSubmit( array $data ) {
+		$slots = [];
+		for ( $n = 1; $n <= $this->editingSlotCount; $n++ ) {
+			$target = trim( $data["target-$n"] ?? '' );
+			if ( $target === '' ) {
+				return $this->msg( 'castlenavigation-error-emptytarget' )->numParams( $n )->text();
+			}
+			$label = $data["label-$n"] ?? '';
+			$slots[$n] = [
+				'target' => $target,
+				// An empty label means "no pipe" — [[foo]] rather than [[foo|]] — so that a
+				// round trip through the form doesn't quietly rewrite every plain link.
+				'label' => $label === '' ? null : $label,
+			];
+		}
+
+		$prose = $data['prose'];
+
+		// Every {n} in the prose must have a slot behind it, or the saved wikitext would
+		// contain a literal "{5}" for readers to trip over.
+		preg_match_all( '/\{(\d+)\}/', $prose, $m );
+		$referenced = array_map( 'intval', $m[1] );
+		$unknown = array_values( array_unique( array_diff( $referenced, array_keys( $slots ) ) ) );
+		if ( $unknown ) {
+			return $this->msg( 'castlenavigation-error-unknownslot' )
+				->params( $this->getLanguage()->commaList( array_map( static fn ( $i ) => "{{$i}}", $unknown ) ) )
+				->text();
+		}
+
+		// A slot the prose never mentions would silently vanish from the room. Say so
+		// rather than dropping someone's destination without comment.
+		$orphans = array_values( array_diff( array_keys( $slots ), $referenced ) );
+		if ( $orphans ) {
+			return $this->msg( 'castlenavigation-error-orphanslot' )
+				->params( $this->getLanguage()->commaList( array_map( static fn ( $i ) => "{{$i}}", $orphans ) ) )
+				->text();
+		}
+
+		// Warn-not-block: name the destinations that don't exist and require one tick.
+		if ( !$data['allowmissing'] ) {
+			$missing = [];
+			foreach ( $slots as $slot ) {
+				$title = Title::newFromText( $slot['target'] );
+				if ( !$title || !$title->exists() ) {
+					$missing[] = $slot['target'];
+				}
+			}
+			if ( $missing ) {
+				return $this->msg( 'castlenavigation-error-missingtargets' )
+					->params( $this->getLanguage()->commaList( $missing ) )
+					->text();
+			}
+		}
+
+		$status = NavigationStore::saveRoom(
+			$this->editingKey,
+			NavigationSlots::build( $prose, $slots ),
+			$this->getAuthority()
+		);
+		if ( !$status->isOK() ) {
+			return $status->getMessage()->text();
+		}
+
+		$this->getOutput()->addHTML( Html::element( 'p', [ 'class' => 'success' ],
+			$this->msg( 'castlenavigation-saved' )->text() ) );
+		return true;
 	}
 
 	private function roomDetailHtml( string $key, string $wikitext ): string {
