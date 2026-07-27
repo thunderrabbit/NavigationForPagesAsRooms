@@ -13,6 +13,9 @@
 	"AutoloadClasses": {
 		"NavigationForPagesAsRooms": "NavigationForPagesAsRooms.php"
 	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\NavigationForPagesAsRooms\\": "includes/"
+	},
 	"Hooks": {
 		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit"
 	}
