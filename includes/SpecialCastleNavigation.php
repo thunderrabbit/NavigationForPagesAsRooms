@@ -41,6 +41,12 @@ class SpecialCastleNavigation extends SpecialPage {
 	/** @var int How many slot fields the form rendered, so the callback knows what to read. */
 	private $editingSlotCount = 0;
 
+	/** @var bool True when the form is making a room rather than changing one. */
+	private $creatingRoom = false;
+
+	/** @var bool True when that new room's key matches no wiki page — see showRoomForm(). */
+	private $creatingWithoutPage = false;
+
 	public function __construct() {
 		// Read-only diagnostics over already-public content, so no restriction yet.
 		// The 'editinterface' gate lands with the write path in Stage 2.
@@ -343,6 +349,13 @@ class SpecialCastleNavigation extends SpecialPage {
 		$out = $this->getOutput();
 
 		if ( !isset( $rooms[$key] ) ) {
+			// A page can render <navigation/> long before anyone gives it exits, so "no such
+			// room" is an ordinary state with an obvious next step — for the people allowed
+			// to take it. Everyone else is told, and gets no form.
+			if ( $this->getAuthority()->isAllowed( 'editinterface' ) ) {
+				$this->showRoomForm( $key, '', true );
+				return;
+			}
 			$out->addHTML( Html::element( 'p', [ 'class' => 'error' ],
 				$this->msg( 'castlenavigation-noroom', $key )->text() ) );
 			$out->addHTML( Html::rawElement( 'p', [],
@@ -370,10 +383,27 @@ class SpecialCastleNavigation extends SpecialPage {
 	 * you intend to write is legitimate, so a missing destination warns and asks for one
 	 * confirmation instead of being forbidden.
 	 */
-	private function showRoomForm( string $key, string $wikitext ): void {
+	private function showRoomForm( string $key, string $wikitext, bool $creating = false ): void {
 		$parsed = NavigationSlots::parse( $wikitext );
 		$this->editingKey = $key;
 		$this->editingSlotCount = count( $parsed['slots'] ) + self::SPARE_SLOTS;
+		$this->creatingRoom = $creating;
+
+		if ( $creating ) {
+			// Rooms are matched by folding a page's title, never by parsing the key back into
+			// one, so roomPageIndex() is the only honest way to ask "could anything ever hit
+			// this key?". A key that folds from no page is dead data: invisible, permanent,
+			// and exactly the failure that hid atilliator's workshop for years. Warn hard —
+			// but allow it, so a room can be laid out before its page is written.
+			$page = $this->roomPageIndex()[$key] ?? null;
+			$this->creatingWithoutPage = $page === null;
+
+			$this->getOutput()->addHTML( $this->creatingWithoutPage
+				? Html::warningBox( $this->msg( 'castlenavigation-create-nopage', $key )->escaped() )
+				: Html::rawElement( 'p', [],
+					$this->msg( 'castlenavigation-create-intro' )->escaped() . ' '
+					. $this->getLinkRenderer()->makeKnownLink( $page, $page->getPrefixedText() ) ) );
+		}
 
 		$fields = [
 			'prose' => [
@@ -412,6 +442,14 @@ class SpecialCastleNavigation extends SpecialPage {
 			'default' => false,
 		];
 
+		if ( $this->creatingWithoutPage ) {
+			$fields['createanyway'] = [
+				'type' => 'check',
+				'label-message' => 'castlenavigation-field-createanyway',
+				'default' => false,
+			];
+		}
+
 		$form = HTMLForm::factory( 'ooui', $fields, $this->getContext() );
 		$form->setWrapperLegend( $key );
 		$form->setSubmitTextMsg( 'castlenavigation-save' );
@@ -431,6 +469,12 @@ class SpecialCastleNavigation extends SpecialPage {
 	 * @return bool|string|array
 	 */
 	public function onRoomSubmit( array $data ) {
+		// Asked before anything else: if the key can never be reached, the room's contents
+		// are beside the point.
+		if ( $this->creatingWithoutPage && empty( $data['createanyway'] ) ) {
+			return $this->msg( 'castlenavigation-error-nopage', $this->editingKey )->text();
+		}
+
 		$slots = [];
 		for ( $n = 1; $n <= $this->editingSlotCount; $n++ ) {
 			$target = trim( $data["target-$n"] ?? '' );
@@ -506,7 +550,8 @@ class SpecialCastleNavigation extends SpecialPage {
 		$status = NavigationStore::saveRoom(
 			$this->editingKey,
 			NavigationSlots::build( $prose, $slots ),
-			$this->getAuthority()
+			$this->getAuthority(),
+			$this->creatingRoom
 		);
 		if ( !$status->isOK() ) {
 			return $status->getMessage()->text();
@@ -514,7 +559,9 @@ class SpecialCastleNavigation extends SpecialPage {
 
 		$out = $this->getOutput();
 		$out->addHTML( Html::element( 'p', [ 'class' => 'success' ],
-			$this->msg( 'castlenavigation-saved' )->text() ) );
+			$this->msg( $this->creatingRoom
+				? 'castlenavigation-created'
+				: 'castlenavigation-saved' )->text() ) );
 
 		// The point of saving is to go and look at the room, so offer it directly rather
 		// than making the editor navigate back through the index to find it again.

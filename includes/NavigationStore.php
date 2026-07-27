@@ -139,12 +139,19 @@ class NavigationStore {
 	 * other 110 rooms — and so two people editing different rooms don't clobber each other
 	 * beyond the usual last-write-wins on the page itself.
 	 *
-	 * @param string $key Lowercased room key; must already exist.
+	 * @param string $key Lowercased room key; must already exist unless $allowCreate.
 	 * @param string $wikitext The room's new exit text.
 	 * @param Authority $performer Who is making the edit.
+	 * @param bool $allowCreate Add the key when it is not already present. Off by default:
+	 *   a caller that has not deliberately offered a create form is far more likely to be
+	 *   passing a typo than a new room, and a key that matches nothing is invisible once
+	 *   saved. Same reasoning as the authorisation check below — the store should not assume
+	 *   its caller got it right.
 	 * @return Status
 	 */
-	public static function saveRoom( string $key, string $wikitext, Authority $performer ): Status {
+	public static function saveRoom(
+		string $key, string $wikitext, Authority $performer, bool $allowCreate = false
+	): Status {
 		$title = self::getDataTitle();
 		if ( !$title ) {
 			return Status::newFatal( 'castlenavigation-save-badpage', self::DATA_PAGE );
@@ -165,16 +172,17 @@ class NavigationStore {
 		}
 
 		$rooms = self::readDataPage() ?: NavigationForPagesAsRooms::getRooms();
-		if ( !array_key_exists( $key, $rooms ) ) {
+		if ( !array_key_exists( $key, $rooms ) && !$allowCreate ) {
 			return Status::newFatal( 'castlenavigation-noroom', $key );
 		}
 
-		if ( $rooms[$key] === $wikitext ) {
+		if ( ( $rooms[$key] ?? null ) === $wikitext ) {
 			// Nothing to do. Saving anyway would put a null edit in the page history and
 			// invalidate every room's cache for no reason.
 			return Status::newGood( false );
 		}
 
+		$isNew = !array_key_exists( $key, $rooms );
 		$rooms[$key] = $wikitext;
 		ksort( $rooms );
 
@@ -189,8 +197,11 @@ class NavigationStore {
 			->newFromTitle( $title )
 			->newPageUpdater( $performer->getUser() );
 		$updater->setContent( SlotRecord::MAIN, new JsonContent( $json ) );
+		// The page history is the audit trail, so say which of the two things happened —
+		// a new key is a much bigger event than a changed one, and ksort() means a diff
+		// alone won't make that obvious.
 		$updater->saveRevision( CommentStoreComment::newUnsavedComment(
-			'Castle navigation: ' . $key
+			( $isNew ? 'Castle navigation: new room ' : 'Castle navigation: ' ) . $key
 		) );
 
 		$status = $updater->getStatus() ?? Status::newGood();
