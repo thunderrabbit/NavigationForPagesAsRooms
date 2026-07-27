@@ -40,5 +40,6 @@
 	"castlenavigation-error-orphanslot": "The prose never mentions $1, so that destination would be lost. Add it to the prose or clear the field.",
 	"castlenavigation-error-missingtargets": "These pages don't exist yet: $1. Check the spelling, or tick the box below to save anyway.",
 	"castlenavigation-save-badpage": "Cannot use $1 as the navigation data page.",
-	"castlenavigation-save-badjson": "Could not encode the navigation data as JSON."
+	"castlenavigation-save-badjson": "Could not encode the navigation data as JSON.",
+	"castlenavigation-viewroom": "View the room:"
 }

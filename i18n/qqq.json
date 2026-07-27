@@ -40,5 +40,6 @@
 	"castlenavigation-error-orphanslot": "Error when a destination exists but the prose never places it. $1 is a comma-separated list like \"{3}\".",
 	"castlenavigation-error-missingtargets": "Warning when destinations do not exist as pages. $1 is a comma-separated list of page titles. Not fatal — the editor may confirm and save.",
 	"castlenavigation-save-badpage": "Error when the configured data page title cannot be parsed. $1 is that title.",
-	"castlenavigation-save-badjson": "Error when the navigation data could not be encoded as JSON."
+	"castlenavigation-save-badjson": "Error when the navigation data could not be encoded as JSON.",
+	"castlenavigation-viewroom": "Lead-in shown after a successful save, followed by a link to the room’s own wiki page so the editor can check the result."
 }

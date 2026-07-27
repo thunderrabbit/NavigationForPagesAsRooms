@@ -479,8 +479,19 @@ class SpecialCastleNavigation extends SpecialPage {
 			return $status->getMessage()->text();
 		}
 
-		$this->getOutput()->addHTML( Html::element( 'p', [ 'class' => 'success' ],
+		$out = $this->getOutput();
+		$out->addHTML( Html::element( 'p', [ 'class' => 'success' ],
 			$this->msg( 'castlenavigation-saved' )->text() ) );
+
+		// The point of saving is to go and look at the room, so offer it directly rather
+		// than making the editor navigate back through the index to find it again.
+		$page = $this->roomPageIndex()[$this->editingKey] ?? null;
+		if ( $page ) {
+			$out->addHTML( Html::rawElement( 'p', [],
+				$this->msg( 'castlenavigation-viewroom' )->escaped() . ' '
+				. $this->getLinkRenderer()->makeKnownLink( $page, $page->getPrefixedText() ) ) );
+		}
+
 		return true;
 	}
 
