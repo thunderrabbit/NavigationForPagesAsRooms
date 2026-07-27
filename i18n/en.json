@@ -17,7 +17,7 @@
 	"castlenavigation-col-shownas": "Shown as",
 	"castlenavigation-status-ok": "OK",
 	"castlenavigation-status-nopage": "No wiki page with this title",
-	"castlenavigation-status-brokentargets": "Missing destination: $1",
+	"castlenavigation-status-brokentargets": "Missing destination:",
 	"castlenavigation-prose-heading": "Prose",
 	"castlenavigation-destinations-heading": "Destinations",
 	"castlenavigation-noexits": "This room declares no exits.",
@@ -26,5 +26,6 @@
 	"castlenavigation-noentry-heading": "Pages asking for navigation with no map entry",
 	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
 	"nfpar-tracking-category-no-entry": "Rooms with no navigation entry",
-	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go."
+	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go.",
+	"castlenavigation-badtitle": "Not a usable page title: $1"
 }

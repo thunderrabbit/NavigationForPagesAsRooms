@@ -96,8 +96,12 @@ class SpecialCastleNavigation extends SpecialPage {
 	 * lookups. LinkBatch resolves them in one query and primes the title cache, so the
 	 * per-title checks afterwards are free.
 	 *
+	 * Returns the resolved Title alongside existence, so callers can link to it — a
+	 * destination that doesn't exist is far more useful as a red "create this page" link
+	 * than as a bare ✗ the reader can't act on.
+	 *
 	 * @param string[] $titleTexts
-	 * @return array<string,bool> original text => exists
+	 * @return array<string,array{title:?Title,exists:bool}> original text => resolution
 	 */
 	private function resolveExistence( array $titleTexts ): array {
 		$linkBatch = MediaWikiServices::getInstance()
@@ -114,12 +118,37 @@ class SpecialCastleNavigation extends SpecialPage {
 		}
 		$linkBatch->execute();
 
-		$exists = [];
+		$resolved = [];
 		foreach ( $titleTexts as $text ) {
 			// A title that would not parse can't exist; report it rather than skipping it.
-			$exists[$text] = isset( $titles[$text] ) && $titles[$text]->exists();
+			$title = $titles[$text] ?? null;
+			$resolved[$text] = [
+				'title' => $title,
+				'exists' => $title !== null && $title->exists(),
+			];
 		}
-		return $exists;
+		return $resolved;
+	}
+
+	/**
+	 * A destination rendered as something the reader can act on.
+	 *
+	 * Existing page → normal link. Missing page → MediaWiki's red link, which lands on the
+	 * create form; that is the answer to "where do I fix this?". Unparseable → plain text,
+	 * because there is nothing to link to and pretending otherwise would mislead.
+	 *
+	 * @param array{title:?Title,exists:bool} $resolution
+	 */
+	private function destinationLink( array $resolution, string $rawTarget ): string {
+		$title = $resolution['title'];
+		if ( !$title ) {
+			return Html::element( 'span', [ 'class' => 'error' ],
+				$this->msg( 'castlenavigation-badtitle', $rawTarget )->text() );
+		}
+		$renderer = $this->getLinkRenderer();
+		return $resolution['exists']
+			? $renderer->makeKnownLink( $title, $title->getPrefixedText() )
+			: $renderer->makeBrokenLink( $title, $title->getPrefixedText() );
 	}
 
 	/**
@@ -150,7 +179,7 @@ class SpecialCastleNavigation extends SpecialPage {
 		foreach ( $parsedRooms as $key => $targets ) {
 			$missing = array_values( array_filter(
 				$targets,
-				static fn ( string $t ) => empty( $exists[$t] )
+				static fn ( string $t ) => empty( $exists[$t]['exists'] )
 			) );
 			if ( $missing ) {
 				$roomsWithBrokenTargets++;
@@ -165,6 +194,8 @@ class SpecialCastleNavigation extends SpecialPage {
 				'page' => $page,
 				'exits' => count( $targets ),
 				'missing' => $missing,
+				// Carried so the status cell can render red links without re-resolving.
+				'resolutions' => $exists,
 			];
 		}
 
@@ -218,7 +249,7 @@ class SpecialCastleNavigation extends SpecialPage {
 	}
 
 	/**
-	 * @param array<int,array{key:string,page:?Title,exits:int,missing:string[]}> $rows
+	 * @param array<int,array{key:string,page:?Title,exits:int,missing:string[],resolutions:array}> $rows
 	 */
 	private function indexTableHtml( array $rows ): string {
 		$html = Html::openElement( 'table', [
@@ -241,19 +272,26 @@ class SpecialCastleNavigation extends SpecialPage {
 	}
 
 	/**
-	 * @param array{key:string,page:?Title,exits:int,missing:string[]} $row
+	 * @param array{key:string,page:?Title,exits:int,missing:string[],resolutions:array} $row
 	 */
 	private function indexRowHtml( array $row ): string {
 		$page = $row['page'];
 
 		if ( $row['missing'] ) {
-			$status = $this->msg( 'castlenavigation-status-brokentargets' )
-				->params( $this->getLanguage()->commaList( $row['missing'] ) )
-				->text();
+			// Red links, so a broken destination can be created straight from this table
+			// rather than leaving the reader to work out where to go.
+			$links = [];
+			foreach ( $row['missing'] as $target ) {
+				$links[] = $this->destinationLink(
+					$row['resolutions'][$target] ?? [ 'title' => null, 'exists' => false ],
+					$target );
+			}
+			$status = $this->msg( 'castlenavigation-status-brokentargets' )->escaped()
+				. ' ' . implode( ', ', $links );
 		} elseif ( !$page ) {
-			$status = $this->msg( 'castlenavigation-status-nopage' )->text();
+			$status = Html::element( 'span', [], $this->msg( 'castlenavigation-status-nopage' )->text() );
 		} else {
-			$status = $this->msg( 'castlenavigation-status-ok' )->text();
+			$status = Html::element( 'span', [], $this->msg( 'castlenavigation-status-ok' )->text() );
 		}
 
 		// Only a broken destination is a defect. A room with no page of its own is
@@ -270,7 +308,7 @@ class SpecialCastleNavigation extends SpecialPage {
 				: Html::element( 'span', [ 'class' => 'nfpar-nopage' ], '—' ) );
 		$cells .= Html::element( 'td', [], (string)$row['exits'] );
 		$cells .= Html::element( 'td', [], (string)count( $row['missing'] ) );
-		$cells .= Html::element( 'td', [], $status );
+		$cells .= Html::rawElement( 'td', [], $status );
 
 		return Html::rawElement( 'tr',
 			$row['missing'] ? [ 'class' => 'nfpar-broken' ] : [],
@@ -347,7 +385,8 @@ class SpecialCastleNavigation extends SpecialPage {
 		$html .= Html::closeElement( 'tr' );
 
 		foreach ( $slots as $n => $slot ) {
-			$ok = !empty( $exists[$slot['target']] );
+			$resolution = $exists[$slot['target']] ?? [ 'title' => null, 'exists' => false ];
+			$ok = $resolution['exists'];
 
 			// Disabled in Stage 1, but otherwise the widget Stage 2 will use: an
 			// autocompleting title input. Stage 2 wraps it in HTMLTitleTextField with
@@ -361,7 +400,10 @@ class SpecialCastleNavigation extends SpecialPage {
 			$cells = Html::element( 'td', [], '{' . $n . '}' );
 			$cells .= Html::rawElement( 'td', [], (string)$input );
 			$cells .= Html::element( 'td', [], $slot['label'] ?? '' );
-			$cells .= Html::element( 'td', [], $ok ? '✓' : '✗' );
+			// The link, not a bare tick: if the page is missing this is the red link that
+			// opens the create form, which is the whole answer to "where do I fix it?".
+			$cells .= Html::rawElement( 'td', [],
+				( $ok ? '✓ ' : '✗ ' ) . $this->destinationLink( $resolution, $slot['target'] ) );
 
 			$html .= Html::rawElement( 'tr',
 				$ok ? [] : [ 'class' => 'nfpar-broken' ],

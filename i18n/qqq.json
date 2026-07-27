@@ -17,7 +17,7 @@
 	"castlenavigation-col-shownas": "Table column heading: the link's display text, when it differs from the page title.",
 	"castlenavigation-status-ok": "Shown when every destination of a room exists.",
 	"castlenavigation-status-nopage": "Shown when the navigation map has an entry but no wiki page carries that title.",
-	"castlenavigation-status-brokentargets": "Shown when destinations do not exist. $1 is a comma-separated list of the missing page titles.",
+	"castlenavigation-status-brokentargets": "Label before a list of destinations that do not exist. Each is rendered as a red link that opens the create-page form.",
 	"castlenavigation-prose-heading": "Heading above the room's exit sentence, with destinations replaced by numbered placeholders.",
 	"castlenavigation-destinations-heading": "Heading above the table of destinations that fill the room's placeholders.",
 	"castlenavigation-noexits": "Shown on a room's page when it links nowhere.",
@@ -26,5 +26,6 @@
 	"castlenavigation-noentry-heading": "Heading above the list of pages that render a navigation tag but have no entry in the map.",
 	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",
 	"nfpar-tracking-category-no-entry": "{{tracking category name}} Category collecting pages that render a navigation tag with no matching entry in the navigation map.",
-	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category."
+	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category.",
+	"castlenavigation-badtitle": "Shown when a destination cannot be parsed as a page title at all, so there is nothing to link to. $1 is the raw target as written in the navigation map."
 }
