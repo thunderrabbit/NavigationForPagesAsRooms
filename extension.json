@@ -3,7 +3,7 @@
 	"author": "Rob Nugen",
 	"url": "https://github.com/thunderrabbit/NavigationForPagesAsRooms",
 	"description": "Renders <navigation/> tags as room-specific exit links for the Castle of Dreams wiki.",
-	"version": "2.2.0",
+	"version": "2.3.0",
 	"license-name": "GPL-3.0-or-later",
 	"type": "parserhook",
 	"requires": {
@@ -31,7 +31,13 @@
 		"nfpar-tracking-category-no-entry"
 	],
 	"descriptionmsg": "castlenavigation-desc",
+	"HookHandlers": {
+		"output": {
+			"class": "MediaWiki\\Extension\\NavigationForPagesAsRooms\\Hooks"
+		}
+	},
 	"Hooks": {
-		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit"
+		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit",
+		"OutputPageBeforeHTML": "output"
 	}
 }

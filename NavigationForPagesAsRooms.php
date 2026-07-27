@@ -185,6 +185,20 @@ class NavigationForPagesAsRooms {
 					$parser->addTrackingCategory( 'nfpar-tracking-category-no-entry' );
 					$where = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
 					$prefix = '';
+					// Rob and Nim ARE The Castle Workers, so for them this sentence should be
+					// a link to the tool that fixes it. That cannot be decided here: parser
+					// output is shared between users, so whichever version parsed first would
+					// be cached and served to everyone. Leave an empty marker carrying the
+					// room key instead and let Hooks::onOutputPageBeforeHTML resolve it per
+					// request — stripped for readers, swapped for a link for sysops.
+					//
+					// Empty and self-contained on purpose: the hook then matches a fixed
+					// shape rather than parsing around a message whose HTML may change, and
+					// on any path where the hook does not run the residue renders as nothing.
+					$postfix = Html::element( 'span', [
+						'class' => 'nfpar-noentry',
+						'data-nfpar-room' => $roomTitle,
+					], '' );
 					break;
 			}
 		} else {
