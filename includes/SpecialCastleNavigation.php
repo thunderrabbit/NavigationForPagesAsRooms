@@ -460,13 +460,21 @@ class SpecialCastleNavigation extends SpecialPage {
 			foreach ( $slots as $slot ) {
 				$title = Title::newFromText( $slot['target'] );
 				if ( !$title || !$title->exists() ) {
-					$missing[] = $slot['target'];
+					$missing[] = $this->destinationLink(
+						[ 'title' => $title, 'exists' => false ],
+						$slot['target'] );
 				}
 			}
 			if ( $missing ) {
-				return $this->msg( 'castlenavigation-error-missingtargets' )
-					->params( $this->getLanguage()->commaList( $missing ) )
-					->text();
+				// Returned as a plain string on purpose. HTMLForm::getErrorsOrWarnings()
+				// puts a string straight into Html::errorBox() without escaping, which is
+				// what lets these be real red links — click one and you land on the create
+				// form for that page. A Message would be ->parse()d instead, and relying on
+				// parameter-substitution to survive that is fiddlier than building the
+				// links here, where destinationLink() already escapes the titles.
+				return $this->msg( 'castlenavigation-error-missingtargets' )->escaped()
+					. ' ' . implode( ', ', $missing ) . ' '
+					. $this->msg( 'castlenavigation-error-missingtargets-hint' )->escaped();
 			}
 		}
 
