@@ -137,6 +137,11 @@ class NavigationForPagesAsRooms {
 	}
 
 	public static function renderNavigationLine( $input, array $args, Parser $parser, PPFrame $frame ) {
+		// The exits live in this file, not in the page's wikitext, so MediaWiki has no
+		// way to know they changed when the extension is redeployed. Opt these pages out
+		// of the parser cache rather than hand-purging every room after each map edit.
+		$parser->getOutput()->updateCacheExpiry( 0 );
+
 		$title = $parser->getTitle();
 		$roomTitle = $title->getText();
 		$namespace = $title->getNamespace();
