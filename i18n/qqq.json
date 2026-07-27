@@ -26,6 +26,7 @@
 	"castlenavigation-backtoindex": "Link text returning to the list of all rooms.",
 	"castlenavigation-noentry-heading": "Heading above the list of pages that render a navigation tag but have no entry in the map.",
 	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",
+	"castlenavigation-setupexits": "Link beside each page in the no-entry list, for users holding the editinterface right only. Opens that room's editing form on this special page.",
 	"nfpar-tracking-category-no-entry": "{{tracking category name}} Category collecting pages that render a navigation tag with no matching entry in the navigation map.",
 	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category.",
 	"castlenavigation-badtitle": "Shown when a destination cannot be parsed as a page title at all, so there is nothing to link to. $1 is the raw target as written in the navigation map.",

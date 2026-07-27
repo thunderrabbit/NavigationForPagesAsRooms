@@ -26,6 +26,7 @@
 	"castlenavigation-backtoindex": "Back to all rooms",
 	"castlenavigation-noentry-heading": "Pages asking for navigation with no map entry",
 	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
+	"castlenavigation-setupexits": "(set up exits)",
 	"nfpar-tracking-category-no-entry": "Rooms with no navigation entry",
 	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go.",
 	"castlenavigation-badtitle": "Not a usable page title: $1",

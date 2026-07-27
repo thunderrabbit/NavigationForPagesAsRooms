@@ -247,12 +247,25 @@ class SpecialCastleNavigation extends SpecialPage {
 		$categoryName = $this->msg( 'nfpar-tracking-category-no-entry' )->inContentLanguage()->text();
 		$category = Category::newFromName( strtr( $categoryName, ' ', '_' ) );
 
+		// The room's own page now offers this link too, but only to someone who happens to
+		// walk into it. This is the same door for someone working down the list.
+		$canEdit = $this->getAuthority()->isAllowed( 'editinterface' );
+		$linkRenderer = $this->getLinkRenderer();
+
 		$members = $category ? $category->getMembers() : null;
 		$items = [];
 		if ( $members ) {
 			foreach ( $members as $title ) {
-				$items[] = Html::rawElement( 'li', [],
-					$this->getLinkRenderer()->makeLink( $title ) );
+				$item = $linkRenderer->makeLink( $title );
+				if ( $canEdit ) {
+					// Fold the title exactly as the renderer folds it, for the same reason
+					// roomPageIndex() does: the key is lowercased and namespace-stripped, so
+					// it cannot be recovered from anything but the real Title.
+					$item .= ' ' . $linkRenderer->makeKnownLink(
+						$this->getPageTitle( strtolower( $title->getText() ) ),
+						$this->msg( 'castlenavigation-setupexits' )->text() );
+				}
+				$items[] = Html::rawElement( 'li', [], $item );
 			}
 		}
 
