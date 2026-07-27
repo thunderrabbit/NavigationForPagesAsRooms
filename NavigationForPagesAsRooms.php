@@ -118,6 +118,8 @@ class NavigationForPagesAsRooms {
 "otnotc - in the beginning..." => "[[Library:OtnoTC - Newsflash!|< Newsflash!]] | [[Library:On the nature of The Cloud|Chapter Index]] | [[Library:OtnoTC - Cloud vs Crowd|Cloud vs Crowd >]]",
 "otnotc - cloud vs crowd" => "[[Library:OtnoTC - In the beginning...|< In the beginning...]] | [[Library:On the nature of The Cloud|Chapter Index]]",
 
+"quests volume 1 - ten truly corroborative tales" => "You can [[The library|put the book down]].",
+
 "thunder rabbit" => "With the Magic of The Wiki, you can teleport to [[Thunder Rabbit's Carrot]]",
 
 
