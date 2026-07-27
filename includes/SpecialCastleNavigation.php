@@ -25,10 +25,20 @@ use MediaWiki\Widget\TitleInputWidget;
 
 class SpecialCastleNavigation extends SpecialPage {
 
+	/**
+	 * Blank destination fields offered beyond the ones a room already has.
+	 *
+	 * Without these the form can only ever change the destinations a room was parsed with —
+	 * there is no way to give a room an exit it did not already have, and a brand-new room
+	 * would open with no destination fields at all. Three is enough for one editing pass, and
+	 * saving reopens the form with three more.
+	 */
+	private const SPARE_SLOTS = 3;
+
 	/** @var string Room being edited; set before the form's submit callback runs. */
 	private $editingKey = '';
 
-	/** @var int How many slots that room has, so the callback knows what to read back. */
+	/** @var int How many slot fields the form rendered, so the callback knows what to read. */
 	private $editingSlotCount = 0;
 
 	public function __construct() {
@@ -363,7 +373,7 @@ class SpecialCastleNavigation extends SpecialPage {
 	private function showRoomForm( string $key, string $wikitext ): void {
 		$parsed = NavigationSlots::parse( $wikitext );
 		$this->editingKey = $key;
-		$this->editingSlotCount = count( $parsed['slots'] );
+		$this->editingSlotCount = count( $parsed['slots'] ) + self::SPARE_SLOTS;
 
 		$fields = [
 			'prose' => [
@@ -376,14 +386,18 @@ class SpecialCastleNavigation extends SpecialPage {
 			],
 		];
 
-		foreach ( $parsed['slots'] as $n => $slot ) {
+		for ( $n = 1; $n <= $this->editingSlotCount; $n++ ) {
+			$slot = $parsed['slots'][$n] ?? null;
 			$fields["target-$n"] = [
 				'type' => 'title',
 				// Autocompletes against real pages, but does not block a red link.
 				'exists' => false,
-				'required' => true,
+				// Nothing is required: a filled slot the prose never mentions, and a {n} with
+				// no slot behind it, are both caught at save with a message that explains
+				// itself. 'required' here would only produce a browser tooltip on the spares.
+				'required' => false,
 				'label' => $this->msg( 'castlenavigation-field-target' )->numParams( $n )->text(),
-				'default' => $slot['target'],
+				'default' => $slot['target'] ?? '',
 			];
 			$fields["label-$n"] = [
 				'type' => 'text',
@@ -420,10 +434,21 @@ class SpecialCastleNavigation extends SpecialPage {
 		$slots = [];
 		for ( $n = 1; $n <= $this->editingSlotCount; $n++ ) {
 			$target = trim( $data["target-$n"] ?? '' );
-			if ( $target === '' ) {
-				return $this->msg( 'castlenavigation-error-emptytarget' )->numParams( $n )->text();
-			}
 			$label = $data["label-$n"] ?? '';
+
+			if ( $target === '' ) {
+				// An untouched spare slot; skip it. build() drops slots the prose does not
+				// reference anyway, so the numbering of the surviving slots stays intact and
+				// nothing needs renumbering.
+				if ( trim( $label ) !== '' ) {
+					// A label with no destination is a half-filled row rather than an unused
+					// one — say so instead of silently discarding what was typed.
+					return $this->msg( 'castlenavigation-error-labelnotarget' )
+						->numParams( $n )->text();
+				}
+				continue;
+			}
+
 			$slots[$n] = [
 				'target' => $target,
 				// An empty label means "no pipe" — [[foo]] rather than [[foo|]] — so that a
