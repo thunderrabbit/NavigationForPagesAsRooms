@@ -23,12 +23,13 @@ namespace MediaWiki\Extension\NavigationForPagesAsRooms;
 use MediaWiki\CommentStore\CommentStoreComment;
 use MediaWiki\Content\JsonContent;
 use MediaWiki\MediaWikiServices;
-use MediaWiki\Permissions\Authority;
 use MediaWiki\Parser\Parser;
+use MediaWiki\Permissions\Authority;
+use MediaWiki\Permissions\PermissionStatus;
 use MediaWiki\Revision\SlotRecord;
+use MediaWiki\Status\Status;
 use MediaWiki\Title\Title;
 use NavigationForPagesAsRooms;
-use MediaWiki\Status\Status;
 
 class NavigationStore {
 
@@ -147,6 +148,20 @@ class NavigationStore {
 		$title = self::getDataTitle();
 		if ( !$title ) {
 			return Status::newFatal( 'castlenavigation-save-badpage', self::DATA_PAGE );
+		}
+
+		// Authorise here as well as at the form, rather than trusting the caller to have
+		// done it. Special:CastleNavigation does gate on this today, but that is one call
+		// site away from being wrong; a maintenance script, an API module or a future hook
+		// could reach this method without passing through the form.
+		//
+		// authorizeWrite rather than isAllowed: this is the actual write, so it should also
+		// honour blocks and rate limits, and it is checked against the real page — which
+		// carries the MediaWiki-namespace 'editinterface' requirement by definition, so
+		// there is no second right to keep in sync with the form's gate.
+		$permissionStatus = PermissionStatus::newEmpty();
+		if ( !$performer->authorizeWrite( 'edit', $title, $permissionStatus ) ) {
+			return Status::wrap( $permissionStatus );
 		}
 
 		$rooms = self::readDataPage() ?: NavigationForPagesAsRooms::getRooms();
