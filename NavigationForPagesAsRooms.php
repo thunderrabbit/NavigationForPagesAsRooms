@@ -173,6 +173,10 @@ class NavigationForPagesAsRooms {
 					$where = "look for another [[ancient looking scrolls|another scroll]], or step back into [[The Castle Entrance]].";
 					break;
 				default:
+					// This page asked for navigation and the map has nothing for it —
+					// which until now was invisible unless someone happened to visit.
+					// Collect these so Special:CastleNavigation can list them.
+					$parser->addTrackingCategory( 'nfpar-tracking-category-no-entry' );
 					$where = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
 					$prefix = '';
 					break;

@@ -22,5 +22,9 @@
 	"castlenavigation-destinations-heading": "Destinations",
 	"castlenavigation-noexits": "This room declares no exits.",
 	"castlenavigation-noroom": "No room named \"$1\" in the navigation map.",
-	"castlenavigation-backtoindex": "Back to all rooms"
+	"castlenavigation-backtoindex": "Back to all rooms",
+	"castlenavigation-noentry-heading": "Pages asking for navigation with no map entry",
+	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
+	"nfpar-tracking-category-no-entry": "Rooms with no navigation entry",
+	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go."
 }

@@ -9,6 +9,7 @@
 
 namespace MediaWiki\Extension\NavigationForPagesAsRooms;
 
+use MediaWiki\Category\Category;
 use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\SpecialPage\SpecialPage;
@@ -119,6 +120,41 @@ class SpecialCastleNavigation extends SpecialPage {
 
 		$out->addHTML( $this->summaryHtml( count( $rows ), $brokenRooms, $brokenTargets ) );
 		$out->addHTML( $this->indexTableHtml( $rows ) );
+		$out->addHTML( $this->noEntryHtml() );
+	}
+
+	/**
+	 * Pages that render <navigation/> but have no map entry.
+	 *
+	 * The table above can only report rooms the map already knows about. This is the
+	 * other direction — the drift that used to be invisible. There is no search backend
+	 * here to scan wikitext for the tag, so the renderer tags these pages into a tracking
+	 * category as they parse, and this lists that category.
+	 */
+	private function noEntryHtml(): string {
+		$html = Html::element( 'h2', [],
+			$this->msg( 'castlenavigation-noentry-heading' )->text() );
+
+		$categoryName = $this->msg( 'nfpar-tracking-category-no-entry' )->inContentLanguage()->text();
+		$category = Category::newFromName( strtr( $categoryName, ' ', '_' ) );
+
+		$members = $category ? $category->getMembers() : null;
+		$items = [];
+		if ( $members ) {
+			foreach ( $members as $title ) {
+				$items[] = Html::rawElement( 'li', [],
+					$this->getLinkRenderer()->makeLink( $title ) );
+			}
+		}
+
+		if ( !$items ) {
+			// Deliberately not phrased as "everything is fine": the category only fills
+			// as pages are parsed, so an empty list means "nothing seen yet", not "none".
+			return $html . Html::element( 'p', [],
+				$this->msg( 'castlenavigation-noentry-empty' )->text() );
+		}
+
+		return $html . Html::rawElement( 'ul', [], implode( '', $items ) );
 	}
 
 	private function summaryHtml( int $roomCount, int $brokenRooms, int $brokenTargets ): string {

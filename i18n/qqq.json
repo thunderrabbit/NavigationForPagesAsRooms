@@ -22,5 +22,9 @@
 	"castlenavigation-destinations-heading": "Heading above the table of destinations that fill the room's placeholders.",
 	"castlenavigation-noexits": "Shown on a room's page when it links nowhere.",
 	"castlenavigation-noroom": "Error shown when the requested room is not in the navigation map. $1 is the requested room key.",
-	"castlenavigation-backtoindex": "Link text returning to the list of all rooms."
+	"castlenavigation-backtoindex": "Link text returning to the list of all rooms.",
+	"castlenavigation-noentry-heading": "Heading above the list of pages that render a navigation tag but have no entry in the map.",
+	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",
+	"nfpar-tracking-category-no-entry": "{{tracking category name}} Category collecting pages that render a navigation tag with no matching entry in the navigation map.",
+	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category."
 }
