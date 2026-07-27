@@ -40,7 +40,9 @@ class SpecialCastleNavigation extends SpecialPage {
 		$subPage = $subPage !== null ? trim( $subPage ) : '';
 
 		if ( $subPage !== '' ) {
-			$this->showRoom( $rooms, strtolower( $subPage ) );
+			// Subpages arrive title-style — "The_library" — but map keys are the room's
+			// display text lowercased, so underscores have to come back out as spaces.
+			$this->showRoom( $rooms, strtolower( strtr( $subPage, '_', ' ' ) ) );
 		} else {
 			$this->showIndex( $rooms );
 		}
@@ -209,7 +211,7 @@ class SpecialCastleNavigation extends SpecialPage {
 	private function summaryHtml(
 		int $roomCount, int $roomsWithBrokenTargets, int $brokenTargets, int $roomsWithNoPage
 	): string {
-		$msg = $this->msg( 'castlenavigation-summary' )
+		$msg = $this->msg( 'castlenavigation-totals' )
 			->numParams( $roomCount, $roomsWithBrokenTargets, $brokenTargets, $roomsWithNoPage )
 			->escaped();
 		return Html::rawElement( 'p', [ 'class' => 'nfpar-summary' ], $msg );
