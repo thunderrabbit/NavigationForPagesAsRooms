@@ -13,6 +13,24 @@
 	"AutoloadClasses": {
 		"NavigationForPagesAsRooms": "NavigationForPagesAsRooms.php"
 	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\NavigationForPagesAsRooms\\": "includes/"
+	},
+	"SpecialPages": {
+		"CastleNavigation": "MediaWiki\\Extension\\NavigationForPagesAsRooms\\SpecialCastleNavigation"
+	},
+	"MessagesDirs": {
+		"NavigationForPagesAsRooms": [
+			"i18n"
+		]
+	},
+	"ExtensionMessagesFiles": {
+		"NavigationForPagesAsRoomsAlias": "NavigationForPagesAsRooms.alias.php"
+	},
+	"TrackingCategories": [
+		"nfpar-tracking-category-no-entry"
+	],
+	"descriptionmsg": "castlenavigation-desc",
 	"Hooks": {
 		"ParserFirstCallInit": "NavigationForPagesAsRooms::onParserFirstCallInit"
 	}

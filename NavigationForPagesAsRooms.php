@@ -15,6 +15,21 @@ class NavigationForPagesAsRooms {
 		$parser->setHook( 'navigation', [ self::class, 'renderNavigationLine' ] );
 	}
 
+	/**
+	 * The navigation map as the renderer sees it: keys folded to lowercase.
+	 *
+	 * Shared with Special:CastleNavigation so the audit view and the renderer can never
+	 * disagree about which rooms exist.
+	 *
+	 * @return array<string,string> lowercased room key => exit wikitext
+	 */
+	public static function getRooms(): array {
+		// Keys are matched lowercased, so fold the map's keys too. A stray capital in
+		// getNavigationMap() would otherwise make an entry permanently unreachable, and
+		// the room would silently render the "nowhere to go" fallback instead.
+		return array_change_key_case( self::getNavigationMap(), CASE_LOWER );
+	}
+
 	private static function getNavigationMap(): array {
 		return [
 "ancient looking scrolls" => "step back into [[The Castle Entrance]].",
@@ -146,10 +161,7 @@ class NavigationForPagesAsRooms {
 		$roomTitle = $title->getText();
 		$namespace = $title->getNamespace();
 
-		// Keys are matched lowercased, so fold the map's keys too. A stray capital in
-		// getNavigationMap() would otherwise make an entry permanently unreachable, and
-		// the room would silently render the "nowhere to go" fallback instead.
-		$castle = array_change_key_case( self::getNavigationMap(), CASE_LOWER );
+		$castle = self::getRooms();
 		$key = strtolower( $roomTitle );
 
 		$prefix = 'You can ';
@@ -161,6 +173,10 @@ class NavigationForPagesAsRooms {
 					$where = "look for another [[ancient looking scrolls|another scroll]], or step back into [[The Castle Entrance]].";
 					break;
 				default:
+					// This page asked for navigation and the map has nothing for it —
+					// which until now was invisible unless someone happened to visit.
+					// Collect these so Special:CastleNavigation can list them.
+					$parser->addTrackingCategory( 'nfpar-tracking-category-no-entry' );
 					$where = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
 					$prefix = '';
 					break;

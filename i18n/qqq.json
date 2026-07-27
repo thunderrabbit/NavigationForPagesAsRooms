@@ -1,0 +1,30 @@
+{
+	"@metadata": {
+		"authors": [
+			"Rob Nugen"
+		]
+	},
+	"castlenavigation": "Name of the special page listing every Castle room and its exits.",
+	"castlenavigation-desc": "{{desc|name=NavigationForPagesAsRooms}}",
+	"castlenavigation-summary": "Totals above the room table. $1 is the number of rooms in the navigation map, $2 the number of rooms with at least one destination that does not exist, $3 the total number of such destinations.",
+	"castlenavigation-col-room": "Table column heading: the room's key in the navigation map.",
+	"castlenavigation-col-page": "Table column heading: whether a wiki page with the room's title exists.",
+	"castlenavigation-col-exits": "Table column heading: how many destinations the room links to.",
+	"castlenavigation-col-broken": "Table column heading: how many of those destinations do not exist.",
+	"castlenavigation-col-status": "Table column heading: plain-language summary of the room's health.",
+	"castlenavigation-col-slot": "Table column heading: the numbered placeholder ({{[[1]]}}, {{[[2]]}} ...) this destination fills in the room's prose.",
+	"castlenavigation-col-destination": "Table column heading: the page title this exit links to.",
+	"castlenavigation-col-shownas": "Table column heading: the link's display text, when it differs from the page title.",
+	"castlenavigation-status-ok": "Shown when every destination of a room exists.",
+	"castlenavigation-status-nopage": "Shown when the navigation map has an entry but no wiki page carries that title.",
+	"castlenavigation-status-brokentargets": "Shown when destinations do not exist. $1 is a comma-separated list of the missing page titles.",
+	"castlenavigation-prose-heading": "Heading above the room's exit sentence, with destinations replaced by numbered placeholders.",
+	"castlenavigation-destinations-heading": "Heading above the table of destinations that fill the room's placeholders.",
+	"castlenavigation-noexits": "Shown on a room's page when it links nowhere.",
+	"castlenavigation-noroom": "Error shown when the requested room is not in the navigation map. $1 is the requested room key.",
+	"castlenavigation-backtoindex": "Link text returning to the list of all rooms.",
+	"castlenavigation-noentry-heading": "Heading above the list of pages that render a navigation tag but have no entry in the map.",
+	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",
+	"nfpar-tracking-category-no-entry": "{{tracking category name}} Category collecting pages that render a navigation tag with no matching entry in the navigation map.",
+	"nfpar-tracking-category-no-entry-desc": "{{tracking category desc}} Explains why a page is in the category."
+}

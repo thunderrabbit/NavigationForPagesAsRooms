@@ -1,0 +1,30 @@
+{
+	"@metadata": {
+		"authors": [
+			"Rob Nugen"
+		]
+	},
+	"castlenavigation": "Castle navigation",
+	"castlenavigation-desc": "Audit view for the Castle's room navigation: every room's exits, and which destinations are broken.",
+	"castlenavigation-summary": "$1 {{PLURAL:$1|room|rooms}}. $2 {{PLURAL:$2|room has|rooms have}} a broken destination ($3 {{PLURAL:$3|link|links}} in total).",
+	"castlenavigation-col-room": "Room",
+	"castlenavigation-col-page": "Page",
+	"castlenavigation-col-exits": "Exits",
+	"castlenavigation-col-broken": "Broken",
+	"castlenavigation-col-status": "Status",
+	"castlenavigation-col-slot": "Slot",
+	"castlenavigation-col-destination": "Destination",
+	"castlenavigation-col-shownas": "Shown as",
+	"castlenavigation-status-ok": "OK",
+	"castlenavigation-status-nopage": "No wiki page with this title",
+	"castlenavigation-status-brokentargets": "Missing destination: $1",
+	"castlenavigation-prose-heading": "Prose",
+	"castlenavigation-destinations-heading": "Destinations",
+	"castlenavigation-noexits": "This room declares no exits.",
+	"castlenavigation-noroom": "No room named \"$1\" in the navigation map.",
+	"castlenavigation-backtoindex": "Back to all rooms",
+	"castlenavigation-noentry-heading": "Pages asking for navigation with no map entry",
+	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
+	"nfpar-tracking-category-no-entry": "Rooms with no navigation entry",
+	"nfpar-tracking-category-no-entry-desc": "Pages in this category contain a <code>&lt;navigation/&gt;</code> tag but have no entry in the navigation map, so they tell the reader there is nowhere to go."
+}
