@@ -22,7 +22,7 @@ class NavigationForPagesAsRooms {
 "around thunder rabbit's carrot" => "go inside [[Thunder Rabbit's Carrot]] (where you can relax without sinking into the cloud), go back to [[the royal garden]], or get lost in [[the Alien Forest]].",
 "astronomical tower" => "go up to the [[candle makers' shop]], or back into the [[inner ward]].",
 "astronomical tower:observatory" => "go down to the [[candle makers' shop]], or west to [[Soness Soleil Solarium]].",
-"Atilliator's workshop" => "go down to the [[armourer's tower]], south to [[the barracks]], or west to [[the parlour]].",
+"atilliator's workshop" => "go down to the [[armourer's tower]], south to [[the barracks]], or west to [[the parlour]].",
 "bake house" => "go back into the [[inner ward]], or pass through to the [[granary]].",
 "balcony overlooking the pool" => "jump into [[the swimming pool]], or go back inside the [[east upper hall]].",
 "balcony overlooking the roller coaster" => "go back into the [[south upper corridor]], or down the ladder to [[The Roller Coaster area]].",
@@ -146,7 +146,10 @@ class NavigationForPagesAsRooms {
 		$roomTitle = $title->getText();
 		$namespace = $title->getNamespace();
 
-		$castle = self::getNavigationMap();
+		// Keys are matched lowercased, so fold the map's keys too. A stray capital in
+		// getNavigationMap() would otherwise make an entry permanently unreachable, and
+		// the room would silently render the "nowhere to go" fallback instead.
+		$castle = array_change_key_case( self::getNavigationMap(), CASE_LOWER );
 		$key = strtolower( $roomTitle );
 
 		$prefix = 'You can ';
