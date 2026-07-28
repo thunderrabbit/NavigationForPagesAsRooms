@@ -171,9 +171,10 @@ class NavigationForPagesAsRooms {
 		$key = strtolower( $roomTitle );
 
 		$prefix = 'You can ';
-		$postfix = '';
+		$state = 'room';
 
 		if ( !array_key_exists( $key, $castle ) ) {
+			$state = 'noentry';
 			switch ( $namespace ) {
 				case 100:  // namespace = scroll
 					$where = "look for another [[ancient looking scrolls|another scroll]], or step back into [[The Castle Entrance]].";
@@ -185,20 +186,6 @@ class NavigationForPagesAsRooms {
 					$parser->addTrackingCategory( 'nfpar-tracking-category-no-entry' );
 					$where = "There is nowhere to go from [[$roomTitle]].  Tell [[Castlepedia:Castle Workers|The Castle Workers]] to get busy!";
 					$prefix = '';
-					// Rob and Nim ARE The Castle Workers, so for them this sentence should be
-					// a link to the tool that fixes it. That cannot be decided here: parser
-					// output is shared between users, so whichever version parsed first would
-					// be cached and served to everyone. Leave an empty marker carrying the
-					// room key instead and let Hooks::onOutputPageBeforeHTML resolve it per
-					// request — stripped for readers, swapped for a link for sysops.
-					//
-					// Empty and self-contained on purpose: the hook then matches a fixed
-					// shape rather than parsing around a message whose HTML may change, and
-					// on any path where the hook does not run the residue renders as nothing.
-					$postfix = Html::element( 'span', [
-						'class' => 'nfpar-noentry',
-						'data-nfpar-room' => $roomTitle,
-					], '' );
 					break;
 			}
 		} else {
@@ -212,6 +199,25 @@ class NavigationForPagesAsRooms {
 			}
 			$where = $castle[$key];
 		}
+
+		// Rob and Nim are the only people who can change a room's exits, so every room —
+		// whether it has exits to correct or none to begin with — should offer them the
+		// editor. That cannot be decided here: parser output is shared between users, so
+		// whichever version parsed first would be cached and served to everyone. Leave an
+		// empty marker carrying the room key instead and let Hooks::onOutputPageBeforeHTML
+		// resolve it per request — stripped for readers, swapped for a link for sysops.
+		//
+		// The state travels with the marker because the wording differs: a room with no
+		// entry is offered "set up this room's exits", one with exits "edit navigation".
+		//
+		// Empty and self-contained on purpose: the hook then matches a fixed shape rather
+		// than parsing around a message whose HTML may change, and on any path where the
+		// hook does not run the residue renders as nothing.
+		$postfix = Html::element( 'span', [
+			'class' => 'nfpar-navmark',
+			'data-nfpar-room' => $roomTitle,
+			'data-nfpar-state' => $state,
+		], '' );
 
 		return $prefix . $parser->recursiveTagParse( $where ) . $postfix;
 	}

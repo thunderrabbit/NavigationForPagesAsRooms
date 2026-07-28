@@ -23,6 +23,7 @@
 	"castlenavigation-noexits": "Shown on a room's page when it links nowhere.",
 	"castlenavigation-noroom": "Error shown when the requested room is not in the navigation map. $1 is the requested room key.",
 	"castlenavigation-fixit": "Link appended, for users holding the editinterface right only, after the message saying a room has no exits. Leads to that room's editing form on the special page. Readers never see this.",
+	"castlenavigation-editnav": "Link appended, for users holding the editinterface right only, after a room's exit sentence. Leads to that room's editing form on the special page. Readers never see this. Compare {{msg-mw|castlenavigation-fixit}}, used where the room has no exits at all.",
 	"castlenavigation-backtoindex": "Link text returning to the list of all rooms.",
 	"castlenavigation-noentry-heading": "Heading above the list of pages that render a navigation tag but have no entry in the map.",
 	"castlenavigation-noentry-empty": "Shown when that list is empty. Notes that the list is populated as pages are parsed, so an empty list is not proof of completeness.",

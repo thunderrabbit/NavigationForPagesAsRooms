@@ -23,6 +23,7 @@
 	"castlenavigation-noexits": "This room declares no exits.",
 	"castlenavigation-noroom": "No room named \"$1\" in the navigation map.",
 	"castlenavigation-fixit": "(set up this room's exits)",
+	"castlenavigation-editnav": "(edit navigation)",
 	"castlenavigation-backtoindex": "Back to all rooms",
 	"castlenavigation-noentry-heading": "Pages asking for navigation with no map entry",
 	"castlenavigation-noentry-empty": "None — every page rendering <navigation/> has an entry. (This list fills as pages are viewed.)",
