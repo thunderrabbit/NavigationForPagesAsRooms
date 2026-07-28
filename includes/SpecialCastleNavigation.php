@@ -127,6 +127,26 @@ class SpecialCastleNavigation extends SpecialPage {
 	}
 
 	/**
+	 * "View the room: <link>" for one room, or nothing when no page folds to its key.
+	 *
+	 * Editing a room and looking at it are one task interrupted, so every view of a room
+	 * offers its page directly rather than sending the editor back through the index to
+	 * find it. roomPageIndex() rather than Title::newFromText(): a key is folded from a
+	 * page's title and cannot be parsed back into one — "inner ward" happens to be the
+	 * page Inner ward, but "qv1 - how baron mike ..." is in Library:.
+	 */
+	private function roomPageLinkHtml( string $key ): string {
+		$page = $this->roomPageIndex()[$key] ?? null;
+		if ( !$page ) {
+			return '';
+		}
+
+		return Html::rawElement( 'p', [ 'class' => 'nfpar-viewroom' ],
+			$this->msg( 'castlenavigation-viewroom' )->escaped() . ' '
+			. $this->getLinkRenderer()->makeKnownLink( $page, $page->getPrefixedText() ) );
+	}
+
+	/**
 	 * Resolve "does this page exist" for many titles at once.
 	 *
 	 * The index needs existence for every room and every destination — several hundred
@@ -426,6 +446,11 @@ class SpecialCastleNavigation extends SpecialPage {
 				: Html::rawElement( 'p', [],
 					$this->msg( 'castlenavigation-create-intro' )->escaped() . ' '
 					. $this->getLinkRenderer()->makeKnownLink( $page, $page->getPrefixedText() ) ) );
+		} else {
+			// The form's legend names the room but cannot be a link — OOUIHTMLForm only uses
+			// the wrapper legend when it is_string(), so an HtmlSnippet would vanish. Offer
+			// the page just above it instead.
+			$this->getOutput()->addHTML( $this->roomPageLinkHtml( $key ) );
 		}
 
 		$fields = [
@@ -586,14 +611,8 @@ class SpecialCastleNavigation extends SpecialPage {
 				? 'castlenavigation-created'
 				: 'castlenavigation-saved' )->text() ) );
 
-		// The point of saving is to go and look at the room, so offer it directly rather
-		// than making the editor navigate back through the index to find it again.
-		$page = $this->roomPageIndex()[$this->editingKey] ?? null;
-		if ( $page ) {
-			$out->addHTML( Html::rawElement( 'p', [],
-				$this->msg( 'castlenavigation-viewroom' )->escaped() . ' '
-				. $this->getLinkRenderer()->makeKnownLink( $page, $page->getPrefixedText() ) ) );
-		}
+		// The point of saving is to go and look at the room.
+		$out->addHTML( $this->roomPageLinkHtml( $this->editingKey ) );
 
 		return true;
 	}
@@ -609,6 +628,7 @@ class SpecialCastleNavigation extends SpecialPage {
 		$out->addModules( [ 'mediawiki.widgets' ] );
 
 		$html = Html::element( 'h2', [], $key );
+		$html .= $this->roomPageLinkHtml( $key );
 
 		$html .= Html::element( 'h3', [],
 			$this->msg( 'castlenavigation-prose-heading' )->text() );
