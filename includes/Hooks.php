@@ -2,9 +2,11 @@
 /**
  * Per-request adjustments to output the parser has already produced.
  *
- * A room with no entry in the navigation map tells the reader "There is nowhere to go from
- * here. Tell The Castle Workers to get busy!" — which is fine for a visitor and useless for
- * the two people who actually are The Castle Workers. They should get a link to the editor.
+ * Every room says something about where you can go next, and the two people who can change
+ * what it says should be able to get at the editor from the room itself rather than by
+ * hand-building a Special:CastleNavigation URL. A room with no entry at all says "There is
+ * nowhere to go from here. Tell The Castle Workers to get busy!" — fine for a visitor, and
+ * useless for the two people who actually are The Castle Workers.
  *
  * That cannot be decided while parsing. Parser output is shared between users, so a tag hook
  * that emitted a sysop-only link would have that link cached and served to everyone who came
@@ -30,14 +32,25 @@ class Hooks implements OutputPageBeforeHTMLHook {
 	 * Cheap test for "is there anything here for us", run against every page view on the wiki.
 	 * Only a handful of pages carry the marker, so this must stay a plain substring search.
 	 */
-	private const MARKER_HINT = 'nfpar-noentry';
+	private const MARKER_HINT = 'nfpar-navmark';
 
 	/**
 	 * The marker exactly as NavigationForPagesAsRooms::renderNavigationLine() writes it.
 	 * Html::element() emits attributes in the order given, so this shape is deterministic —
 	 * but the two must be changed together.
 	 */
-	private const MARKER_RE = '#<span class="nfpar-noentry" data-nfpar-room="([^"]*)"></span>#';
+	private const MARKER_RE =
+		'#<span class="nfpar-navmark" data-nfpar-room="([^"]*)" data-nfpar-state="([a-z]+)"></span>#';
+
+	/**
+	 * How each marker state reads to a sysop: CSS class, then message key. A state the
+	 * renderer knows about and this does not would silently lose its link, so treat an
+	 * unlisted state as "no entry" — the wording that invites setting the room up.
+	 */
+	private const STATES = [
+		'room' => [ 'nfpar-editnav', 'castlenavigation-editnav' ],
+		'noentry' => [ 'nfpar-fixit', 'castlenavigation-fixit' ],
+	];
 
 	/**
 	 * @param \MediaWiki\Output\OutputPage $out
@@ -62,11 +75,12 @@ class Hooks implements OutputPageBeforeHTMLHook {
 				// The key went through Html::element() into an attribute, so it is escaped.
 				$room = htmlspecialchars_decode( $m[1], ENT_QUOTES );
 				$target = SpecialPage::getTitleFor( 'CastleNavigation', $room );
+				[ $class, $message ] = self::STATES[$m[2]] ?? self::STATES['noentry'];
 
-				return ' ' . Html::rawElement( 'span', [ 'class' => 'nfpar-fixit' ],
+				return ' ' . Html::rawElement( 'span', [ 'class' => $class ],
 					Html::element( 'a',
 						[ 'href' => $target->getLocalURL() ],
-						$out->msg( 'castlenavigation-fixit' )->text()
+						$out->msg( $message )->text()
 					)
 				);
 			},
