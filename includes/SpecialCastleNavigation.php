@@ -47,6 +47,9 @@ class SpecialCastleNavigation extends SpecialPage {
 	/** @var bool True when that new room's key matches no wiki page — see showRoomForm(). */
 	private $creatingWithoutPage = false;
 
+	/** @var array<string,Title>|null Memoised roomPageIndex(), which is a whole-table query. */
+	private $pageIndex = null;
+
 	public function __construct() {
 		// Read-only diagnostics over already-public content, so no restriction yet.
 		// The 'editinterface' gate lands with the write path in Stage 2.
@@ -84,11 +87,17 @@ class SpecialCastleNavigation extends SpecialPage {
 	 * "Library:On the nature of The Cloud". Going the other way is exact — fold every real
 	 * page the same way the renderer does, and look the key up in that.
 	 *
-	 * One query over a few hundred rows.
+	 * One query over a few hundred rows, memoised: a single request can ask for the index
+	 * while building the form, while rendering the room's link, and again after a save, and
+	 * nothing a save writes is in a content namespace, so the answer cannot change under it.
 	 *
 	 * @return array<string,Title> folded key => the real Title
 	 */
 	private function roomPageIndex(): array {
+		if ( $this->pageIndex !== null ) {
+			return $this->pageIndex;
+		}
+
 		$namespaces = array_values( array_unique( array_merge(
 			[ NS_MAIN ],
 			$this->getConfig()->get( MainConfigNames::ContentNamespaces )
@@ -113,6 +122,7 @@ class SpecialCastleNavigation extends SpecialPage {
 			// is no "right" winner here; keep the first and don't pretend otherwise.
 			$index[$key] ??= $title;
 		}
+		$this->pageIndex = $index;
 		return $index;
 	}
 
